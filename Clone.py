@@ -48,6 +48,8 @@ board = [
          ]
 
 
+TextPath = "Assetsi/TextImages/"
+BoardPath = "Assetsi/BoardImages/"
 
 PI = math.pi
 WIDTH = 700
@@ -64,6 +66,7 @@ for i in range(1, 5):
 counter  = 0
 flicker = False
 level = board
+spriteRatio = 3/2
 
 
 pygame.init()
@@ -77,6 +80,9 @@ class Game:
         self.ghosts = [Ghost(18,12,'blue'), Ghost(18,14,'red'), Ghost(18,15,'pink'), Ghost(18,17,"orange") ]
         self.score = score
         self.lives  = 3
+        self.paused = True
+        self.started = False
+        
     
     
     def draw_live(self):
@@ -84,7 +90,17 @@ class Game:
         for i in range(self.lives):
             screen.blit(pygame.transform.scale(player_images[0], (25, 25)), (30 + i * 40, 830))
     
+    def drawReady(self):
+        ready = ["tile274.png", "tile260.png", "tile256.png", "tile259.png", "tile281.png", "tile283.png"]
+        for i in range(len(ready)):
+            letter = pygame.image.load(TextPath + ready[i])
+            letter = pygame.transform.scale(letter, (int(23), int(23)))
+            screen.blit(letter, ((11 + i) * 23, 20 * 23, 23, 23))
+    
+    
     def update(self):
+        
+        
 
         self.pacman.update() #pac-man di chuyển
         
@@ -108,15 +124,50 @@ class Game:
                 for ghost in self.ghosts:
                         ghost.setAttacked(True)     # spooked
 
+    
+    def displayScore(self):
+        textOneUp = [ "tile019.png", "tile002.png", "tile014.png", "tile018.png", "tile004.png"]
+        # textHighScore = ["tile007.png", "tile008.png", "tile006.png", "tile007.png", "tile015.png", "tile019.png", "tile002.png", "tile014.png", "tile018.png", "tile004.png"]
+        index = 0
+        scoreStart = 11
+        # highScoreStart = 11
+        for i in range(scoreStart, scoreStart+len(textOneUp)):
+            tileImage = pygame.image.load(TextPath + textOneUp[index])
+            tileImage = pygame.transform.scale(tileImage, (20, 20))
+            screen.blit(tileImage, (i * 20, 39, 23, 23))
+            index += 1
+        # print(board[int(self.col)][int(self.row)])
+      
+        score = str(self.score)
+        if score == "0":
+            score = "00"
+        index = 0
+        for i in range(0, len(score)):
+            digit = int(score[i])
+            tileImage = pygame.image.load(TextPath + "tile0" + str(32 + digit) + ".png")
+            tileImage = pygame.transform.scale(tileImage, (20, 20))
+            screen.blit(tileImage, ((scoreStart + 2 + index) * 27, 39, 23, 23))
+            index += 1
+    
+    
+    
+    
     def render(self):
-
+        if self.paused or not self.started:
+            self.drawReady()
+            game.paused = False
+            
+           
+        self.displayScore()
+        
         self.draw_live()
         self.pacman.draw()
-
+        
         for ghost in self.ghosts:
              ghost.draw()
 
         pygame.display.update()
+        
     
     def touchingPacman(self, row, col):
         if row - 0.5 <= self.pacman.row and row >= self.pacman.row and col == self.pacman.col: # cùng cột, nằm dưới , -0.5 thì đi qua pacman
@@ -199,6 +250,12 @@ class Ghost:
         self.dead = False
         self.deathTimer = 120
         self.ghostSpeed = 1/4
+        
+        self.target = [-1, -1]
+        
+        self.attackedTimer = 240
+        self.attackedCount = 0
+        
 
     def draw(self):
         ghostImage = pygame.image.load(f'assets/ghost_images/dead.png')
@@ -250,6 +307,8 @@ class Ghost:
         if self.col < 0:
             self.col = len(level[0]) - 1
 
+    
+    
     def calcDistance(self, a, b):
         dR = a[0] - b[0]
         dC = a[1] - b[1]
@@ -298,9 +357,93 @@ def canMove(row, col):
         return True
     return False
 
-    
+def displayLaunchScreen():
+    # Draw Pacman Title
+    pacmanTitle = ["tile016.png", "tile000.png", "tile448.png", "tile012.png", "tile000.png", "tile013.png"]
+    for i in range(len(pacmanTitle)):
+        letter = pygame.image.load(TextPath + pacmanTitle[i])
+        letter = pygame.transform.scale(letter, (int(23 * 4), int(23 * 4)))
+        screen.blit(letter, ((2 + 4 * i) * 23, 2 * 23, 23, 23))
+
+    # Draw Character / Nickname
+    characterTitle = [
+        #Character
+        "tile002.png", "tile007.png", "tile000.png", "tile018.png", "tile000.png", "tile002.png", "tile020.png", "tile004.png", "tile018.png",
+        # /
+        "tile015.png", "tile042.png", "tile015.png",
+        # Nickname
+        "tile013.png", "tile008.png", "tile002.png", "tile010.png", "tile013.png", "tile000.png", "tile012.png", "tile004.png"
+    ]
+    for i in range(len(characterTitle)):
+        letter = pygame.image.load(TextPath + characterTitle[i])
+        letter = pygame.transform.scale(letter, (int(23), int(23)))
+        screen.blit(letter, ((4 + i) * 23, 10 * 23, 23, 23))
+
+    #Draw Characters and their Nickname
+    characters = [
+        # Red Ghost
+        [
+            "tile449.png", "tile015.png", "tile107.png", "tile015.png", "tile083.png", "tile071.png", "tile064.png", "tile067.png", "tile078.png", "tile087.png",
+            "tile015.png", "tile015.png", "tile015.png", "tile015.png",
+            "tile108.png", "tile065.png", "tile075.png", "tile072.png", "tile077.png", "tile074.png", "tile089.png", "tile108.png"
+        ],
+        # Pink Ghost
+        [
+            "tile450.png", "tile015.png", "tile363.png", "tile015.png", "tile339.png", "tile336.png", "tile324.png", "tile324.png", "tile323.png", "tile345.png",
+            "tile015.png", "tile015.png", "tile015.png", "tile015.png",
+            "tile364.png", "tile336.png", "tile328.png", "tile333.png", "tile330.png", "tile345.png", "tile364.png"
+        ],
+        # Blue Ghost
+        [
+            "tile452.png", "tile015.png", "tile363.png", "tile015.png", "tile193.png", "tile192.png", "tile211.png", "tile199.png", "tile197.png", "tile213.png", "tile203.png",
+            "tile015.png", "tile015.png", "tile015.png",
+            "tile236.png", "tile200.png", "tile205.png", "tile202.png", "tile217.png", "tile236.png"
+        ],
+        # Orange Ghost
+        [
+            "tile451.png", "tile015.png", "tile363.png", "tile015.png", "tile272.png", "tile270.png", "tile266.png", "tile260.png", "tile281.png",
+            "tile015.png", "tile015.png", "tile015.png", "tile015.png", "tile015.png",
+            "tile300.png", "tile258.png", "tile267.png", "tile281.png", "tile259.png", "tile260.png", "tile300.png"
+        ]
+    ]
+    for i in range(len(characters)):
+        for j in range(len(characters[i])):
+            if j == 0:
+                    letter = pygame.image.load(TextPath + characters[i][j])
+                    letter = pygame.transform.scale(letter, (int(23 * spriteRatio), int(23 * spriteRatio)))
+                    screen.blit(letter, ((2 + j) * 23 - 23//2, (12 + 2 * i) * 23 - 23//3, 23, 23))
+            else:
+                letter = pygame.image.load(TextPath + characters[i][j])
+                letter = pygame.transform.scale(letter, (int(23), int(23)))
+                screen.blit(letter, ((2 + j) * 23, (12 + 2 * i) * 23, 23, 23))
+    # Draw Pacman and Ghosts
+    event = ["tile449.png", "tile015.png", "tile452.png", "tile015.png",  "tile015.png", "tile448.png", "tile453.png", "tile015.png", "tile015.png", "tile015.png",  "tile453.png"]
+    for i in range(len(event)):
+        character = pygame.image.load(TextPath + event[i])
+        character = pygame.transform.scale(character, (int(23 * 2), int(23 * 2)))
+        screen.blit(character, ((4 + i * 2) * 23, 24 * 23, 23, 23))
+    # Draw PlatForm from Pacman and Ghosts
+    wall = ["tile454.png", "tile454.png", "tile454.png", "tile454.png", "tile454.png", "tile454.png", "tile454.png", "tile454.png", "tile454.png", "tile454.png", "tile454.png", "tile454.png", "tile454.png", "tile454.png", "tile454.png"]
+    for i in range(len(wall)):
+        platform = pygame.image.load(TextPath + wall[i])
+        platform = pygame.transform.scale(platform, (int(23 * 2), int(23 * 2)))
+        screen.blit(platform, ((i * 2) * 23, 26 * 23, 23, 23))
+
+    # Press Space to Play
+    instructions = ["tile016.png", "tile018.png", "tile004.png", "tile019.png", "tile019.png", "tile015.png", "tile019.png", "tile016.png", "tile000.png", "tile002.png", "tile004.png", "tile015.png", "tile020.png", "tile014.png", "tile015.png", "tile016.png", "tile011.png", "tile000.png", "tile025.png"]
+    for i in range(len(instructions)):
+        letter = pygame.image.load(TextPath + instructions[i])
+        letter = pygame.transform.scale(letter, (int(23), int(23)))
+        screen.blit(letter, ((4.5 + i) * 23, 35 * 23 - 10, 23, 23))
+
+    pygame.display.update()
+
+
+onLaunchScreen = True
+displayLaunchScreen()   
 
 game = Game(score= 0)
+
 
 
 while True:
@@ -320,22 +463,40 @@ while True:
     print(game.pacman.row, game.pacman.col, f'score: {game.score}')
 
 
-    game.render() # draw pac man, ghost, lives
+    # game.render() # draw pac man, ghost, lives
+   
     
     
     for event in pygame.event.get():
         if event.type == QUIT:
             pygame.quit()
             sys.exit()
-        
         if event.type == pygame.KEYDOWN:
+            game.paused = False
+            game.started = True
             if event.key == pygame.K_RIGHT:
-                game.pacman.newDir= 0
+                if not onLaunchScreen:
+                    game.pacman.newDir= 0
             if event.key == pygame.K_LEFT:
-                game.pacman.newDir= 1
+                if not onLaunchScreen:
+                    game.pacman.newDir= 1
             if event.key == pygame.K_UP:
-                game.pacman.newDir= 2
+                if not onLaunchScreen:
+                    game.pacman.newDir= 2
             if event.key == pygame.K_DOWN:
-                game.pacman.newDir= 3
+                if not onLaunchScreen:
+                    game.pacman.newDir= 3
+            if event.key == pygame.K_SPACE:
+                # game.started = True
+                onLaunchScreen = False
+                game.paused = True
+                
+                # if onLaunchScreen:
+                #     
+                    
     
-    game.update() # update  (logic score), (pac-man di chuyển)
+    if not onLaunchScreen:     
+        game.render()    
+        game.update() # update  (logic score), (pac-man di chuyển)
+
+
